@@ -1,19 +1,43 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { UploadCloud, FileText, X, CheckCircle2 } from "lucide-react";
+import { UploadCloud, FileText, X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { ParsedData } from "./types";
+import { validateCSV, ValidationResult } from "@/lib/csvValidation";
 
 interface UploadStepProps {
   file: File | null;
   onFileSelect: (file: File | null) => void;
+  onParsedData: (data: ParsedData | null) => void;
   onNext: () => void;
 }
 
-export function UploadStep({ file, onFileSelect, onNext }: UploadStepProps) {
-  const onDrop = useCallback((acceptedFiles: File[], fileRejections: any[]) => {
-    // Handle rejections
+export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadStepProps) {
+  const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleValidation = async (selectedFile: File) => {
+    setIsValidating(true);
+    setValidation(null);
+    onParsedData(null);
+    
+    const result = await validateCSV(selectedFile);
+    setValidation(result);
+    setIsValidating(false);
+
+    if (result.isValid && result.parsedData) {
+      onFileSelect(selectedFile);
+      onParsedData(result.parsedData);
+      toast.success("File validated successfully.");
+    } else {
+      onFileSelect(null);
+      toast.error(result.error || "File validation failed.");
+    }
+  };
+
+  const onDrop = useCallback(async (acceptedFiles: File[], fileRejections: any[]) => {
     if (fileRejections.length > 0) {
       const rejection = fileRejections[0];
       if (rejection.errors[0]?.code === "file-invalid-type") {
@@ -27,10 +51,9 @@ export function UploadStep({ file, onFileSelect, onNext }: UploadStepProps) {
     }
 
     if (acceptedFiles.length > 0) {
-      onFileSelect(acceptedFiles[0]);
-      toast.success("File selected successfully.");
+      await handleValidation(acceptedFiles[0]);
     }
-  }, [onFileSelect]);
+  }, [onFileSelect, onParsedData]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -44,6 +67,8 @@ export function UploadStep({ file, onFileSelect, onNext }: UploadStepProps) {
   const removeFile = (e: React.MouseEvent) => {
     e.stopPropagation();
     onFileSelect(null);
+    onParsedData(null);
+    setValidation(null);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -75,7 +100,7 @@ export function UploadStep({ file, onFileSelect, onNext }: UploadStepProps) {
 
         <div className="p-6">
           <AnimatePresence mode="wait">
-            {!file ? (
+            {!file && !isValidating && (!validation || validation.isValid) ? (
               <motion.div
                 key="upload-zone"
                 initial={{ opacity: 0, y: 10 }}
@@ -105,6 +130,33 @@ export function UploadStep({ file, onFileSelect, onNext }: UploadStepProps) {
                   <p className="text-xs text-zinc-400">Maximum file size: 5 MB</p>
                 </div>
               </motion.div>
+            ) : isValidating ? (
+              <motion.div
+                key="validating"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="rounded-lg border border-zinc-200 bg-white p-10 shadow-sm flex flex-col items-center justify-center"
+              >
+                <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-4" />
+                <p className="text-sm font-medium text-zinc-700">Validating CSV file...</p>
+              </motion.div>
+            ) : validation && !validation.isValid ? (
+              <motion.div
+                key="error-card"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="rounded-lg border border-red-200 bg-red-50 p-6 shadow-sm relative text-center"
+              >
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-md font-semibold text-red-900 mb-2">Validation Failed</h3>
+                <p className="text-sm text-red-700 mb-6">{validation.error}</p>
+                <Button variant="outline" onClick={() => setValidation(null)}>Try Again</Button>
+              </motion.div>
             ) : (
               <motion.div
                 key="file-card"
@@ -121,13 +173,13 @@ export function UploadStep({ file, onFileSelect, onNext }: UploadStepProps) {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center space-x-2">
-                        <p className="text-sm font-medium text-zinc-900 truncate" title={file.name}>
-                          {file.name}
+                        <p className="text-sm font-medium text-zinc-900 truncate" title={file?.name}>
+                          {file?.name}
                         </p>
                         <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                       </div>
                       <p className="text-xs text-zinc-500 mt-0.5">
-                        {formatFileSize(file.size)}
+                        {file && formatFileSize(file.size)}
                       </p>
                     </div>
                   </div>
@@ -149,7 +201,9 @@ export function UploadStep({ file, onFileSelect, onNext }: UploadStepProps) {
           </div>
 
           <div className="mt-6 flex justify-end">
-            <Button disabled={!file} onClick={onNext}>Continue</Button>
+            <Button disabled={!file || !validation?.isValid} onClick={onNext}>
+              Continue
+            </Button>
           </div>
         </div>
       </div>

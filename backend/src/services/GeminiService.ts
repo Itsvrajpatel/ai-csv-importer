@@ -38,10 +38,10 @@ export class GeminiService {
 
       logger.info('Sending prompt to Gemini API for CRM data extraction...');
 
-      // Implement a timeout to throw a descriptive error if Gemini hangs (e.g., 60 seconds)
-      const timeoutMs = 60000;
+      // Implement a timeout to throw a descriptive error if Gemini hangs (e.g., 120 seconds)
+      const timeoutMs = 120000;
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Gemini API Timeout: Request took longer than 60 seconds.')), timeoutMs);
+        setTimeout(() => reject(new Error('Gemini API Timeout: Request took longer than 120 seconds.')), timeoutMs);
       });
 
       // 2. Send the prompt to Gemini

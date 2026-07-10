@@ -1,24 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { AnimatePresence } from "framer-motion";
 import { Stepper } from "./wizard/Stepper";
 import { UploadStep } from "./wizard/UploadStep";
 import { PreviewStep } from "./wizard/PreviewStep";
 import { ProcessingStep } from "./wizard/ProcessingStep";
 import { ResultsStep } from "./wizard/ResultsStep";
-import { ParsedData } from "./wizard/types";
+import { useCSVImport } from "@/hooks/useCSVImport";
 
 export function CSVWizard() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [file, setFile] = useState<File | null>(null);
-  const [parsedData, setParsedData] = useState<ParsedData | null>(null);
-
-  const resetWizard = () => {
-    setFile(null);
-    setParsedData(null);
-    setCurrentStep(1);
-  };
+  const {
+    currentStep,
+    file,
+    setFile,
+    parsedData,
+    setParsedData,
+    importResult,
+    setImportResult,
+    resetWizard,
+    goToNextStep,
+    goToPrevStep,
+  } = useCSVImport();
 
   return (
     <div className="w-full flex flex-col items-center pt-8 pb-16">
@@ -30,8 +33,9 @@ export function CSVWizard() {
             <UploadStep 
               key="step-1"
               file={file} 
-              onFileSelect={setFile} 
-              onNext={() => setCurrentStep(2)} 
+              onFileSelect={setFile}
+              onParsedData={setParsedData} 
+              onNext={goToNextStep} 
             />
           )}
           {currentStep === 2 && (
@@ -40,20 +44,25 @@ export function CSVWizard() {
               file={file!} 
               parsedData={parsedData} 
               setParsedData={setParsedData} 
-              onBack={() => setCurrentStep(1)} 
-              onNext={() => setCurrentStep(3)} 
+              onBack={goToPrevStep} 
+              onNext={goToNextStep} 
             />
           )}
           {currentStep === 3 && (
             <ProcessingStep 
               key="step-3"
-              onNext={() => setCurrentStep(4)} 
+              file={file!}
+              onBack={goToPrevStep}
+              onNext={(result) => {
+                setImportResult(result);
+                goToNextStep();
+              }} 
             />
           )}
           {currentStep === 4 && (
             <ResultsStep 
               key="step-4"
-              parsedData={parsedData} 
+              importResult={importResult} 
               onReset={resetWizard} 
             />
           )}

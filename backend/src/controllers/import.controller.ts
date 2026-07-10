@@ -29,7 +29,7 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
 
     // 2. Split rows into batches
     const rawBatchSize = parseInt(req.query.batchSize as string, 10);
-    const batchSize = isNaN(rawBatchSize) ? 20 : rawBatchSize;
+    const batchSize = isNaN(rawBatchSize) ? 10 : rawBatchSize;
     
     const batches = BatchService.createBatches(parsedData.rows, batchSize);
 
@@ -44,6 +44,8 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
     // 3. Process batches sequentially through Gemini
     let successfulBatches = 0;
     let failedBatches = 0;
+    let skipped = 0;
+    const warnings: string[] = [];
     const records: CRMLead[] = [];
 
     for (let i = 0; i < batches.length; i++) {
@@ -56,10 +58,12 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
         
         records.push(...crmLeads);
         successfulBatches++;
+        skipped += (batch.length - crmLeads.length);
         logger.info(`Batch ${i + 1} completed`);
         logger.info(`Batch progress: ${i + 1}/${batches.length}`);
       } catch (batchError: any) {
         failedBatches++;
+        warnings.push(`Batch ${i + 1} failed: ${batchError.message}`);
         logger.error(`Batch ${i + 1} failed: ${batchError.message}`);
         logger.info(`Batch progress: ${i + 1}/${batches.length}`);
         // We do NOT throw here; we continue processing the next batch.
@@ -68,7 +72,6 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
 
     const processingTime = Date.now() - startTime;
     const imported = records.length;
-    const skipped = parsedData.rowCount - imported;
 
     logger.info('Import Finished');
     logger.info(`Imported count: ${imported}`);
@@ -81,6 +84,7 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
       totalBatches: batches.length,
       successfulBatches,
       failedBatches,
+      warnings,
       imported,
       skipped,
       processingTime,
