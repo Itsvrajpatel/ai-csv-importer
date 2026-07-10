@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { ParsedData } from "./types";
 import { validateCSV, ValidationResult } from "@/lib/csvValidation";
+import { SkeletonTable } from "@/components/ui/SkeletonTable";
 
 interface UploadStepProps {
   file: File | null;
@@ -107,11 +108,13 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 {...getRootProps()}
-                className={`group relative rounded-lg border-2 border-dashed p-10 text-center transition-colors cursor-pointer ${
+                className={`group relative rounded-lg border-2 border-dashed p-10 text-center transition-all cursor-pointer ${
                   isDragActive
-                    ? "border-zinc-400 bg-zinc-100"
-                    : "border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 hover:bg-zinc-50"
+                    ? "border-blue-400 bg-blue-50/50"
+                    : "border-zinc-200 bg-zinc-50/30 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-sm"
                 }`}
               >
                 <input {...getInputProps()} />
@@ -136,10 +139,15 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="rounded-lg border border-zinc-200 bg-white p-10 shadow-sm flex flex-col items-center justify-center"
+                className="w-full relative"
               >
-                <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-4" />
-                <p className="text-sm font-medium text-zinc-700">Validating CSV file...</p>
+                <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg">
+                  <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-4" />
+                  <p className="text-sm font-medium text-zinc-700">Validating CSV file...</p>
+                </div>
+                <div className="opacity-50 pointer-events-none scale-y-75 origin-top hidden sm:block">
+                  <SkeletonTable />
+                </div>
               </motion.div>
             ) : validation && !validation.isValid ? (
               <motion.div
@@ -163,8 +171,9 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm relative overflow-hidden"
+                whileHover={{ scale: 1.01 }}
+                transition={{ duration: 0.2, type: "spring", stiffness: 300, damping: 25 }}
+                className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm relative overflow-hidden group"
               >
                 <div className="flex items-center justify-between relative z-10">
                   <div className="flex items-center space-x-4">
@@ -209,32 +218,43 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
       </div>
 
       {/* Info Panels */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-zinc-200 p-5 shadow-sm">
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+      >
+        <motion.div 
+          className="bg-white rounded-lg border border-zinc-200 p-5 shadow-sm transition-shadow hover:shadow-md"
+          whileHover={{ y: -2 }}
+        >
           <h3 className="text-sm font-semibold text-zinc-900 mb-3">
             Supported Sources
           </h3>
           <ul className="text-sm text-zinc-600 space-y-2">
             <li className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-300"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-400"></span>
               Facebook Lead Export
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-300"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-400"></span>
               Google Ads Export
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-300"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-400"></span>
               Excel
             </li>
             <li className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-zinc-300"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-blue-400"></span>
               CRM Export
             </li>
           </ul>
-        </div>
+        </motion.div>
 
-        <div className="bg-white rounded-lg border border-zinc-200 p-5 shadow-sm">
+        <motion.div 
+          className="bg-white rounded-lg border border-zinc-200 p-5 shadow-sm transition-shadow hover:shadow-md"
+          whileHover={{ y: -2 }}
+        >
           <h3 className="text-sm font-semibold text-zinc-900 mb-3">
             Requirements
           </h3>
@@ -252,8 +272,8 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
               Max 5 MB
             </li>
           </ul>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </motion.div>
   );
 }

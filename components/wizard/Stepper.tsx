@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface StepperProps {
   currentStep: number;
@@ -14,46 +15,64 @@ const steps = [
 
 export function Stepper({ currentStep }: StepperProps) {
   return (
-    <nav aria-label="Progress" className="mb-12 w-full max-w-2xl mx-auto px-4">
+    <nav aria-label="Progress" className="mb-14 w-full max-w-3xl mx-auto px-4">
       <ol role="list" className="flex items-center w-full justify-between">
-        {steps.map((step, stepIdx) => (
-          <li key={step.name} className={`relative flex items-center ${stepIdx !== steps.length - 1 ? 'flex-1' : ''}`}>
-            <div className="relative flex flex-col items-center justify-center group z-10">
-              <span 
-                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors bg-white
-                  ${currentStep > step.id ? 'border-blue-600 bg-blue-600' : 
-                    currentStep === step.id ? 'border-blue-600' : 
-                    'border-zinc-300'}`
-                }
+        {steps.map((step, stepIdx) => {
+          const isCompleted = currentStep > step.id;
+          const isCurrent = currentStep === step.id;
+          const isUpcoming = currentStep < step.id;
+
+          return (
+            <li key={step.name} className={`relative flex items-center ${stepIdx !== steps.length - 1 ? 'flex-1' : ''}`}>
+              <motion.div 
+                className="relative flex flex-col items-center justify-center group z-10"
+                whileHover={isUpcoming ? { scale: 1.05 } : {}}
               >
-                {currentStep > step.id ? (
-                  <Check className="h-4 w-4 text-white" aria-hidden="true" />
-                ) : (
-                  <span className={`text-sm font-medium ${currentStep === step.id ? 'text-blue-600' : 'text-zinc-500'}`}>
-                    {step.id}
-                  </span>
-                )}
-              </span>
-              <span 
-                className={`absolute -bottom-6 text-xs font-medium whitespace-nowrap
-                  ${currentStep === step.id ? 'text-blue-600' : 
-                    currentStep > step.id ? 'text-zinc-900' : 'text-zinc-500'}`
-                }
-              >
-                {step.name}
-              </span>
-            </div>
-            
-            {stepIdx !== steps.length - 1 ? (
-              <div className="flex-1 mx-2 sm:mx-4 h-0.5 bg-zinc-200 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-blue-600 transition-all duration-500 ease-in-out" 
-                  style={{ width: currentStep > step.id ? '100%' : '0%' }}
-                />
-              </div>
-            ) : null}
-          </li>
-        ))}
+                <motion.span 
+                  className={`flex h-9 w-9 items-center justify-center rounded-full border-2 bg-white transition-colors duration-300
+                    ${isCompleted ? 'border-blue-600 bg-blue-600' : 
+                      isCurrent ? 'border-blue-600 ring-4 ring-blue-50' : 
+                      'border-zinc-200'}`
+                  }
+                  layout
+                >
+                  {isCompleted ? (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    >
+                      <Check className="h-5 w-5 text-white" aria-hidden="true" />
+                    </motion.div>
+                  ) : (
+                    <span className={`text-sm font-semibold ${isCurrent ? 'text-blue-600' : 'text-zinc-400'}`}>
+                      {step.id}
+                    </span>
+                  )}
+                </motion.span>
+                <span 
+                  className={`absolute -bottom-7 text-xs font-medium whitespace-nowrap transition-colors duration-300
+                    ${isCurrent ? 'text-blue-600' : 
+                      isCompleted ? 'text-zinc-900' : 'text-zinc-400'}`
+                  }
+                >
+                  {step.name}
+                </span>
+              </motion.div>
+              
+              {stepIdx !== steps.length - 1 ? (
+                <div className="flex-1 mx-2 sm:mx-4 h-1 bg-zinc-100 rounded-full overflow-hidden">
+                  <motion.div 
+                    className="h-full bg-blue-600 rounded-full" 
+                    initial={{ width: "0%" }}
+                    animate={{ width: isCompleted ? "100%" : "0%" }}
+                    transition={{ type: "spring", stiffness: 100, damping: 20 }}
+                  />
+                </div>
+              ) : null}
+            </li>
+          );
+        })}
       </ol>
     </nav>
   );

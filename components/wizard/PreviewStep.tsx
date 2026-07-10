@@ -159,11 +159,25 @@ export function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepPro
                         </tr>
                       ))}
                     </thead>
-                    <tbody>
+                    <motion.tbody 
+                      initial="hidden"
+                      animate="visible"
+                      variants={{
+                        visible: {
+                          transition: {
+                            staggerChildren: 0.05
+                          }
+                        }
+                      }}
+                    >
                       {table.getRowModel().rows.map((row, index) => (
-                        <tr 
+                        <motion.tr 
                           key={row.id} 
                           role="row"
+                          variants={{
+                            hidden: { opacity: 0, y: 10 },
+                            visible: { opacity: 1, y: 0 }
+                          }}
                           className={`border-b border-zinc-100 last:border-0 hover:bg-zinc-100 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-zinc-50/30'}`}
                         >
                           {row.getVisibleCells().map(cell => (
@@ -176,9 +190,9 @@ export function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepPro
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
                           ))}
-                        </tr>
+                        </motion.tr>
                       ))}
-                    </tbody>
+                    </motion.tbody>
                   </table>
                 </div>
               </div>

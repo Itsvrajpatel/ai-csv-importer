@@ -24,7 +24,7 @@ export function CSVWizard() {
   } = useCSVImport();
 
   return (
-    <div className="w-full flex flex-col items-center pt-8 pb-16">
+    <div className="w-full flex flex-col items-center pt-12 pb-24">
       <Stepper currentStep={currentStep} />
       
       <div className="w-full mt-4">

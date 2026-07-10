@@ -146,10 +146,10 @@ export function ProcessingStep({ file, onBack, onNext }: ProcessingStepProps) {
                 {errorState.description}
               </p>
               <div className="flex items-center gap-3 w-full justify-center">
-                <Button variant="outline" onClick={onBack}>
+                <Button variant="outline" onClick={onBack} className="transition-transform hover:scale-105 active:scale-95">
                   Back to Preview
                 </Button>
-                <Button onClick={startImport}>
+                <Button onClick={startImport} className="transition-transform hover:scale-105 active:scale-95">
                   Retry Import
                 </Button>
               </div>
@@ -177,14 +177,23 @@ export function ProcessingStep({ file, onBack, onNext }: ProcessingStepProps) {
 
               <div className="w-full max-w-sm mx-auto mb-8">
                 <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-blue-600 transition-all duration-300 ease-out"
-                    style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                  <motion.div 
+                    className="h-full bg-blue-600"
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+                    transition={{ type: "spring", stiffness: 100, damping: 20 }}
                   />
                 </div>
               </div>
               
-              <div className="text-left space-y-4 max-w-xs mx-auto w-full pl-4">
+              <motion.div 
+                className="text-left space-y-4 max-w-xs mx-auto w-full pl-4"
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  visible: { transition: { staggerChildren: 0.1 } }
+                }}
+              >
                 {processingStages.map((step, idx) => {
                   const isCompleted = status === "success" || idx < currentStep;
                   const isCurrent = status === "processing" && idx === currentStep;
@@ -193,8 +202,10 @@ export function ProcessingStep({ file, onBack, onNext }: ProcessingStepProps) {
                   return (
                     <motion.div 
                       key={idx}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: isPending ? 0.4 : 1, x: 0 }}
+                      variants={{
+                        hidden: { opacity: 0, x: -10 },
+                        visible: { opacity: isPending ? 0.4 : 1, x: 0 }
+                      }}
                       className="flex items-center space-x-3"
                     >
                       {isCompleted ? (
@@ -213,7 +224,7 @@ export function ProcessingStep({ file, onBack, onNext }: ProcessingStepProps) {
                     </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>

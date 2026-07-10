@@ -546,20 +546,20 @@ ${warnings && warnings.length > 0 ? warnings.map((w: string) => "- " + w).join("
       </motion.div>
 
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 mt-4">
-        <Button variant="outline" size="lg" onClick={onReset} className="min-w-[200px] w-full sm:w-auto">
+        <Button variant="outline" size="lg" onClick={onReset} className="min-w-[200px] w-full sm:w-auto transition-transform hover:scale-105 active:scale-95">
           Import Another CSV
         </Button>
         {records && records.length > 0 && (
           <>
-            <Button variant="outline" size="lg" className="gap-2 min-w-[200px] w-full sm:w-auto hover:bg-zinc-100" onClick={handleDownloadReport}>
+            <Button variant="outline" size="lg" className="gap-2 min-w-[200px] w-full sm:w-auto hover:bg-zinc-100 transition-transform hover:scale-105 active:scale-95" onClick={handleDownloadReport}>
               <FileTextIcon className="w-4 h-4 text-zinc-500" /> Download Report
             </Button>
             {hasWarnings && (
-              <Button variant="outline" size="lg" className="gap-2 min-w-[200px] w-full sm:w-auto border-orange-200 text-orange-700 hover:bg-orange-50" onClick={handleDownloadFailed}>
+              <Button variant="outline" size="lg" className="gap-2 min-w-[200px] w-full sm:w-auto border-orange-200 text-orange-700 hover:bg-orange-50 transition-transform hover:scale-105 active:scale-95" onClick={handleDownloadFailed}>
                 <AlertCircle className="w-4 h-4 text-orange-500" /> Download Failed Log
               </Button>
             )}
-            <Button size="lg" className="gap-2 min-w-[200px] w-full sm:w-auto bg-blue-600 hover:bg-blue-700" onClick={handleDownloadJson}>
+            <Button size="lg" className="gap-2 min-w-[200px] w-full sm:w-auto bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow transition-all hover:scale-105 active:scale-95" onClick={handleDownloadJson}>
               <FileJson className="w-4 h-4" /> Download JSON
             </Button>
           </>
