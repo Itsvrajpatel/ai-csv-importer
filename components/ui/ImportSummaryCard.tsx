@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { AnimatedCounter } from './AnimatedCounter';
 
-interface StatsCardProps {
+interface ImportSummaryCardProps {
   label: string;
   value: string | number;
   icon: React.ReactNode;
@@ -10,13 +10,13 @@ interface StatsCardProps {
   iconTextColor?: string;
 }
 
-export const StatsCard = React.memo(function StatsCard({ 
+export const ImportSummaryCard = React.memo(function ImportSummaryCard({ 
   label, 
   value, 
   icon, 
   iconBgColor = 'bg-zinc-100', 
   iconTextColor = 'text-zinc-600' 
-}: StatsCardProps) {
+}: ImportSummaryCardProps) {
   // Try to parse the numeric part for the animated counter
   const isNumberValue = typeof value === 'number';
   const stringValue = String(value);

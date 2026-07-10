@@ -2,7 +2,7 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-interface StepperProps {
+interface ImportStepperProps {
   currentStep: number;
 }
 
@@ -13,7 +13,7 @@ const steps = [
   { id: 4, name: 'Results' },
 ];
 
-export function Stepper({ currentStep }: StepperProps) {
+export function ImportStepper({ currentStep }: ImportStepperProps) {
   return (
     <nav aria-label="Progress" className="mb-14 w-full max-w-3xl mx-auto px-4">
       <ol role="list" className="flex items-center w-full justify-between">

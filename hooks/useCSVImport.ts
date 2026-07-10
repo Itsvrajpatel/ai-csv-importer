@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { ParsedData } from "@/components/wizard/types";
 
 export function useCSVImport() {
@@ -7,16 +7,16 @@ export function useCSVImport() {
   const [parsedData, setParsedData] = useState<ParsedData | null>(null);
   const [importResult, setImportResult] = useState<any | null>(null);
 
-  const resetWizard = () => {
+  const resetWizard = useCallback(() => {
     setFile(null);
     setParsedData(null);
     setImportResult(null);
     setCurrentStep(1);
-  };
+  }, []);
 
-  const goToNextStep = () => setCurrentStep((prev) => prev + 1);
-  const goToPrevStep = () => setCurrentStep((prev) => prev - 1);
-  const goToStep = (step: number) => setCurrentStep(step);
+  const goToNextStep = useCallback(() => setCurrentStep((prev) => prev + 1), []);
+  const goToPrevStep = useCallback(() => setCurrentStep((prev) => prev - 1), []);
+  const goToStep = useCallback((step: number) => setCurrentStep(step), []);
 
   return {
     currentStep,

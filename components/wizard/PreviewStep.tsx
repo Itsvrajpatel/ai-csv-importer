@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-table";
 import { FileText, List, Columns, HardDrive, FileX } from "lucide-react";
 import { ParsedData } from "./types";
-import { StatsCard } from "@/components/ui/StatsCard";
+import { ImportSummaryCard } from "@/components/ui/ImportSummaryCard";
 
 interface PreviewStepProps {
   file: File;
@@ -18,18 +18,18 @@ interface PreviewStepProps {
   onNext: () => void;
 }
 
-export function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepProps) {
-  const handleConfirm = () => {
-    onNext();
-  };
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
+export const PreviewStep = React.memo(function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepProps) {
+  const handleConfirm = React.useCallback(() => {
+    onNext();
+  }, [onNext]);
 
   const columns = useMemo(() => {
     if (!parsedData) return [];
@@ -40,8 +40,10 @@ export function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepPro
     }));
   }, [parsedData]);
 
+  const tableData = useMemo(() => parsedData?.rows || [], [parsedData]);
+
   const table = useReactTable({
-    data: parsedData?.rows || [],
+    data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -55,12 +57,12 @@ export function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepPro
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="w-full max-w-5xl mx-auto"
+      className="w-full max-w-5xl mx-auto px-4 sm:px-0"
     >
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden mb-6">
-        <div className="p-6 border-b border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden mb-6 max-w-full">
+        <div className="p-4 sm:p-6 border-b border-zinc-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-semibold text-zinc-900">Data Preview</h2>
+            <h2 className="text-lg sm:text-xl font-semibold text-zinc-900">Data Preview</h2>
             <p className="text-sm text-zinc-500 mt-1">
               Review your parsed data before processing.
             </p>
@@ -79,7 +81,7 @@ export function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepPro
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {!parsedData ? (
             <div className="text-center py-12 text-zinc-500">
               Failed to load preview. No parsed data available.
@@ -101,29 +103,29 @@ export function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepPro
           ) : (
             <>
               {/* Stats Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <StatsCard 
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <ImportSummaryCard 
                   label="File Name" 
                   value={file.name} 
                   icon={<FileText className="w-4 h-4" />}
                   iconBgColor="bg-blue-50"
                   iconTextColor="text-blue-600"
                 />
-                <StatsCard 
+                <ImportSummaryCard 
                   label="Total Rows" 
                   value={parsedData.rows.length} 
                   icon={<List className="w-4 h-4" />}
                   iconBgColor="bg-purple-50"
                   iconTextColor="text-purple-600"
                 />
-                <StatsCard 
+                <ImportSummaryCard 
                   label="Total Columns" 
                   value={parsedData.headers.length} 
                   icon={<Columns className="w-4 h-4" />}
                   iconBgColor="bg-orange-50"
                   iconTextColor="text-orange-600"
                 />
-                <StatsCard 
+                <ImportSummaryCard 
                   label="File Size" 
                   value={formatFileSize(file.size)} 
                   icon={<HardDrive className="w-4 h-4" />}
@@ -206,4 +208,4 @@ export function PreviewStep({ file, parsedData, onBack, onNext }: PreviewStepPro
       </div>
     </motion.div>
   );
-}
+});

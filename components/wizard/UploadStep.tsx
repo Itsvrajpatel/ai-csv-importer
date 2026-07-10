@@ -15,11 +15,19 @@ interface UploadStepProps {
   onNext: () => void;
 }
 
-export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadStepProps) {
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+};
+
+export const UploadStep = React.memo(function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadStepProps) {
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
 
-  const handleValidation = async (selectedFile: File) => {
+  const handleValidation = useCallback(async (selectedFile: File) => {
     setIsValidating(true);
     setValidation(null);
     onParsedData(null);
@@ -36,7 +44,7 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
       onFileSelect(null);
       toast.error(result.error || "File validation failed.");
     }
-  };
+  }, [onFileSelect, onParsedData]);
 
   const onDrop = useCallback(async (acceptedFiles: File[], fileRejections: any[]) => {
     if (fileRejections.length > 0) {
@@ -65,20 +73,12 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
     maxFiles: 1,
   });
 
-  const removeFile = (e: React.MouseEvent) => {
+  const removeFile = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onFileSelect(null);
     onParsedData(null);
     setValidation(null);
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
+  }, [onFileSelect, onParsedData]);
 
   return (
     <motion.div
@@ -90,8 +90,8 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
       className="w-full max-w-xl mx-auto"
     >
       <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden mb-6">
-        <div className="p-6 border-b border-zinc-100">
-          <h1 className="text-xl font-semibold text-zinc-900">
+        <div className="p-4 sm:p-6 border-b border-zinc-100">
+          <h1 className="text-lg sm:text-xl font-semibold text-zinc-900">
             Import Leads via CSV
           </h1>
           <p className="text-sm text-zinc-500 mt-1">
@@ -111,7 +111,7 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 {...getRootProps()}
-                className={`group relative rounded-lg border-2 border-dashed p-10 text-center transition-all cursor-pointer ${
+                className={`group relative rounded-lg border-2 border-dashed p-6 sm:p-10 min-h-[200px] flex flex-col justify-center items-center text-center transition-all cursor-pointer ${
                   isDragActive
                     ? "border-blue-400 bg-blue-50/50"
                     : "border-zinc-200 bg-zinc-50/30 hover:border-zinc-300 hover:bg-zinc-50 hover:shadow-sm"
@@ -209,8 +209,8 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
             </p>
           </div>
 
-          <div className="mt-6 flex justify-end">
-            <Button disabled={!file || !validation?.isValid} onClick={onNext}>
+          <div className="mt-6 flex justify-end w-full">
+            <Button className="w-full sm:w-auto" disabled={!file || !validation?.isValid} onClick={onNext}>
               Continue
             </Button>
           </div>
@@ -276,4 +276,4 @@ export function UploadStep({ file, onFileSelect, onParsedData, onNext }: UploadS
       </motion.div>
     </motion.div>
   );
-}
+});

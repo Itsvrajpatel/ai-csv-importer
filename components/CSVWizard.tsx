@@ -2,12 +2,28 @@
 
 import React from "react";
 import { AnimatePresence } from "framer-motion";
-import { Stepper } from "./wizard/Stepper";
+import dynamic from "next/dynamic";
+import { ImportStepper } from "./wizard/ImportStepper";
 import { UploadStep } from "./wizard/UploadStep";
-import { PreviewStep } from "./wizard/PreviewStep";
-import { ProcessingStep } from "./wizard/ProcessingStep";
-import { ResultsStep } from "./wizard/ResultsStep";
 import { useCSVImport } from "@/hooks/useCSVImport";
+import { Loader2 } from "lucide-react";
+
+const LoadingFallback = () => (
+  <div className="w-full h-64 flex flex-col items-center justify-center">
+    <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-4" />
+    <p className="text-zinc-500 text-sm">Loading step...</p>
+  </div>
+);
+
+const PreviewStep = dynamic(() => import("./wizard/PreviewStep").then(mod => mod.PreviewStep), {
+  loading: () => <LoadingFallback />
+});
+const ProcessingStep = dynamic(() => import("./wizard/ProcessingStep").then(mod => mod.ProcessingStep), {
+  loading: () => <LoadingFallback />
+});
+const ResultsStep = dynamic(() => import("./wizard/ResultsStep").then(mod => mod.ResultsStep), {
+  loading: () => <LoadingFallback />
+});
 
 export function CSVWizard() {
   const {
@@ -24,8 +40,8 @@ export function CSVWizard() {
   } = useCSVImport();
 
   return (
-    <div className="w-full flex flex-col items-center pt-12 pb-24">
-      <Stepper currentStep={currentStep} />
+    <div className="w-full flex flex-col items-center pt-12 pb-24 px-4 sm:px-6 max-w-full overflow-hidden sm:overflow-visible">
+      <ImportStepper currentStep={currentStep} />
       
       <div className="w-full mt-4">
         <AnimatePresence mode="wait">
