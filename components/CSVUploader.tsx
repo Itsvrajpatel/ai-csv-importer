@@ -131,7 +131,7 @@ export function CSVUploader() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            {...getRootProps()}
+            {...(getRootProps() as any)}
             className={`group relative rounded-lg border-2 border-dashed p-10 text-center transition-colors cursor-pointer ${
               isDragActive
                 ? "border-zinc-400 bg-zinc-100"

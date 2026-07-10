@@ -110,7 +110,7 @@ export const UploadStep = React.memo(function UploadStep({ file, onFileSelect, o
                 transition={{ duration: 0.2 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                {...getRootProps()}
+                {...(getRootProps() as any)}
                 className={`group relative rounded-lg border-2 border-dashed p-6 sm:p-10 min-h-[200px] flex flex-col justify-center items-center text-center transition-all cursor-pointer ${
                   isDragActive
                     ? "border-blue-400 bg-blue-50/50"

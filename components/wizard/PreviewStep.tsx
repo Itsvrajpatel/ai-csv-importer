@@ -48,7 +48,7 @@ export const PreviewStep = React.memo(function PreviewStep({ file, parsedData, o
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const isEmpty = parsedData && parsedData.rows.length === 0;
+  const isEmpty = parsedData ? parsedData.rows.length === 0 : false;
 
   return (
     <motion.div
