@@ -1,10 +1,17 @@
 import Papa from 'papaparse';
 
+export interface SkippedRow {
+  row: number;
+  type: string;
+  message: string;
+}
+
 export interface CsvParseResult {
   headers: string[];
   rows: Record<string, string>[];
   rowCount: number;
   columnCount: number;
+  skippedRows: SkippedRow[];
 }
 
 export class CsvParserService {
@@ -12,7 +19,7 @@ export class CsvParserService {
    * Parses a CSV string and extracts headers and rows.
    * @param csvString The raw CSV content
    * @returns The parsed CSV result
-   * @throws Error if the CSV is malformed or parsing fails critically
+   * @throws Error if the CSV is completely empty or missing headers
    */
   public static parseCsv(csvString: string): CsvParseResult {
     if (!csvString.trim()) {
@@ -24,30 +31,40 @@ export class CsvParserService {
       skipEmptyLines: true, // Ignore empty rows
     });
 
-    // Handle parsing errors gracefully
+    const skippedRows: SkippedRow[] = [];
+    const errorRowIndices = new Set<number>();
+
+    // Collect row-level errors
     if (parsed.errors && parsed.errors.length > 0) {
-      // If there are errors, we might want to check if it's completely unparseable
-      // Some errors are warnings (like trailing commas), but some are critical.
-      // For this requirement, we'll throw the first error if it exists to satisfy "Validate parsing errors"
-      throw new Error(`CSV Parsing Error: ${parsed.errors[0].message} at row ${parsed.errors[0].row ?? 'unknown'}`);
+      for (const err of parsed.errors) {
+        if (err.row !== undefined) {
+          if (!errorRowIndices.has(err.row)) {
+            skippedRows.push({
+              row: err.row,
+              type: err.code || err.type, // Map PapaParse 'code' (e.g. TooFewFields) to type
+              message: err.message
+            });
+            errorRowIndices.add(err.row);
+          }
+        }
+      }
     }
-
-
 
     if (!parsed.meta.fields || parsed.meta.fields.length === 0) {
       throw new Error('CSV Formatting Error: No headers found');
     }
 
     const headers = parsed.meta.fields;
-    const rows = parsed.data;
-    const rowCount = rows.length;
+    const validRows = parsed.data.filter((_, index) => !errorRowIndices.has(index));
+    const rowCount = validRows.length;
     const columnCount = headers.length;
 
     return {
       headers,
-      rows,
+      rows: validRows,
       rowCount,
       columnCount,
+      skippedRows,
     };
   }
 }

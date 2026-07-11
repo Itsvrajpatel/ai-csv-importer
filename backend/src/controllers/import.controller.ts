@@ -26,6 +26,15 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
     // 1. Parse CSV (Parser handles empty checks and structure validation)
     const parsedData = CsvParserService.parseCsv(csvString);
     logger.info('CSV parsed');
+    logger.info(`Valid rows: ${parsedData.rowCount}`);
+    logger.info(`Skipped rows: ${parsedData.skippedRows.length}`);
+
+    if (parsedData.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid rows were found in the uploaded CSV.',
+      });
+    }
 
     // 2. Split rows into batches
     const rawBatchSize = parseInt(req.query.batchSize as string, 10);
@@ -36,17 +45,27 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
     logger.info({
       fileName: originalname,
       fileSize: size,
-      totalRows: parsedData.rowCount,
+      totalRows: parsedData.rowCount + parsedData.skippedRows.length,
       totalColumns: parsedData.columnCount,
       batchCount: batches.length,
     }, 'Successfully processed CSV upload into batches, starting Gemini extraction...');
+    logger.info(`Batch count: ${batches.length}`);
 
     // 3. Process batches sequentially through Gemini
     let successfulBatches = 0;
     let failedBatches = 0;
-    let skipped = 0;
+    let skipped = parsedData.skippedRows.length;
     const warnings: string[] = [];
     const records: CRMLead[] = [];
+
+    // Pre-populate warnings with skipped row messages
+    for (const skippedRow of parsedData.skippedRows) {
+      warnings.push(`Row ${skippedRow.row} skipped because ${skippedRow.message}`);
+    }
+    
+    if (warnings.length > 0) {
+      logger.info(`Warnings: ${warnings.length}`);
+    }
 
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
@@ -73,7 +92,7 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
     const processingTime = Date.now() - startTime;
     const imported = records.length;
 
-    logger.info('Import Finished');
+    logger.info('Import completed');
     logger.info(`Imported count: ${imported}`);
     logger.info(`Skipped count: ${skipped}`);
     logger.info(`Processing time: ${processingTime}ms`);
@@ -81,14 +100,15 @@ export const importCsv = async (req: Request, res: Response, next: NextFunction)
     // 4. Return final aggregated JSON response
     return res.status(200).json({
       success: true,
-      totalBatches: batches.length,
-      successfulBatches,
-      failedBatches,
-      warnings,
+      totalRows: parsedData.rowCount + parsedData.skippedRows.length,
       imported,
       skipped,
+      failedBatches,
+      successfulBatches,
       processingTime,
       records,
+      warnings,
+      skippedRows: parsedData.skippedRows,
     });
     
   } catch (error: any) {
