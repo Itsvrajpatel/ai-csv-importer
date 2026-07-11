@@ -11,8 +11,11 @@
 
 ## 📸 Screenshots
 
-`[Placeholder for Application Screenshot / GIF]`
-*Add screenshots here demonstrating the upload process, AI mapping preview, and final import success.*
+<img width="1897" height="908" alt="image" src="https://github.com/user-attachments/assets/024afacb-f3df-4f73-82a5-26bca699f3a4" />
+<img width="1897" height="907" alt="image" src="https://github.com/user-attachments/assets/15dfbcf5-db37-4575-b4ff-d56ba8605437" />
+<img width="1900" height="910" alt="image" src="https://github.com/user-attachments/assets/72fb7a50-0cac-424e-bc31-1fe11245ca35" />
+<img width="1896" height="906" alt="image" src="https://github.com/user-attachments/assets/3aaaf1cc-8bc5-4b77-85e2-51b12926a855" />
+
 
 ## ✨ Features
 
