@@ -1,4 +1,4 @@
-import app from './src/app';
+import app from './app';
 
 function printRoutes(app: any) {
   const routes: string[] = [];
@@ -12,11 +12,11 @@ function printRoutes(app: any) {
         if (handler.route) {
           routes.push(middleware.regexp.toString() + ' -> ' + handler.route.path);
         } else if (handler.name === 'router') {
-           handler.handle.stack.forEach((h: any) => {
-             if (h.route) {
-               routes.push(middleware.regexp.toString() + ' -> ' + handler.regexp.toString() + ' -> ' + h.route.path);
-             }
-           });
+          handler.handle.stack.forEach((h: any) => {
+            if (h.route) {
+              routes.push(middleware.regexp.toString() + ' -> ' + handler.regexp.toString() + ' -> ' + h.route.path);
+            }
+          });
         }
       });
     }
