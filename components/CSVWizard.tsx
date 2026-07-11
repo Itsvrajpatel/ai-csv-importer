@@ -7,6 +7,7 @@ import { ImportStepper } from "./wizard/ImportStepper";
 import { UploadStep } from "./wizard/UploadStep";
 import { useCSVImport } from "@/hooks/useCSVImport";
 import { Loader2 } from "lucide-react";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 const LoadingFallback = () => (
   <div className="w-full h-64 flex flex-col items-center justify-center">
@@ -76,11 +77,13 @@ export function CSVWizard() {
             />
           )}
           {currentStep === 4 && (
-            <ResultsStep 
-              key="step-4"
-              importResult={importResult} 
-              onReset={resetWizard} 
-            />
+            <ErrorBoundary>
+              <ResultsStep 
+                key="step-4"
+                importResult={importResult} 
+                onReset={resetWizard} 
+              />
+            </ErrorBoundary>
           )}
         </AnimatePresence>
       </div>
