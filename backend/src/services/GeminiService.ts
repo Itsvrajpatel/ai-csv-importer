@@ -1,98 +1,162 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { env } from '../config/env';
-import { CRMLead, CRMLeadArraySchema } from '../validators/crmLead.validator';
-import { logger } from '../utils/logger';
+import { GoogleGenAI } from "@google/genai";
+import { env } from "../config/env";
+import { CRMLead, CRMLeadArraySchema } from "../validators/crmLead.validator";
+import { logger } from "../utils/logger";
 
 export class GeminiService {
-  // Initialize the Gemini client only once using the singleton pattern.
-  // We use a getter so it only throws if we actually try to use it without a key.
-  private static _genAI: GoogleGenerativeAI | null = null;
+  private static _ai: GoogleGenAI | null = null;
 
-  private static get genAI(): GoogleGenerativeAI {
-    if (!this._genAI) {
+  private static get ai(): GoogleGenAI {
+    if (!this._ai) {
       if (!env.GEMINI_API_KEY) {
-        throw new Error('GEMINI_API_KEY environment variable is missing.');
+        throw new Error("GEMINI_API_KEY environment variable is missing.");
       }
-      this._genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+
+      this._ai = new GoogleGenAI({
+        apiKey: env.GEMINI_API_KEY,
+      });
     }
-    return this._genAI;
+
+    return this._ai;
   }
 
-  /**
-   * Extracts CRM data by passing the combined prompts to Gemini 2.5 Flash.
-   *
-   * @param systemInstruction The rigid schema and rules prompt.
-   * @param userPrompt The CSV headers and records to be processed.
-   * @returns A promise resolving to an array of validated CRMLead objects.
-   */
-  public static async extractCRMData(systemInstruction: string, userPrompt: string): Promise<CRMLead[]> {
+  public static async extractCRMData(
+    systemInstruction: string,
+    userPrompt: string
+  ): Promise<CRMLead[]> {
     try {
-      // 1. Initialize the model dynamically so we can inject the systemInstruction for this specific request.
-      const model = this.genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
-        systemInstruction,
-        generationConfig: {
-          responseMimeType: 'application/json',
+      logger.info("Sending prompt to Gemini...");
+
+      const timeoutMs = 120000;
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(
+            new Error(
+              `Gemini API Timeout: Request took longer than ${timeoutMs / 1000
+              } seconds.`
+            )
+          );
+        }, timeoutMs);
+      });
+
+      const responsePromise = this.ai.models.generateContent({
+        model: env.GEMINI_MODEL,
+
+        contents: userPrompt,
+
+        config: {
+          systemInstruction,
+
+          responseMimeType: "application/json",
+
+          temperature: 0,
+
+          topP: 0.95,
+
+          maxOutputTokens: 8192,
         },
       });
 
-      logger.info('Sending prompt to Gemini API for CRM data extraction...');
+      const response = await Promise.race([
+        responsePromise,
+        timeoutPromise,
+      ]);
 
-      // Implement a timeout to throw a descriptive error if Gemini hangs (e.g., 120 seconds)
-      const timeoutMs = 120000;
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Gemini API Timeout: Request took longer than 120 seconds.')), timeoutMs);
-      });
+      const responseText = response.text;
 
-      // 2. Send the prompt to Gemini
-      const responsePromise = model.generateContent(userPrompt);
-
-      const result = await Promise.race([responsePromise, timeoutPromise]);
-      const response = result.response;
-      const responseText = response.text();
-
-      // 3 & 4. Validate empty response and parse JSON safely
-      if (!responseText || responseText.trim() === '') {
-        throw new Error('Empty response received from Gemini API.');
+      if (!responseText || responseText.trim() === "") {
+        throw new Error("Empty response received from Gemini.");
       }
 
       let parsedJson: unknown;
+
       try {
         parsedJson = JSON.parse(responseText);
-      } catch (parseError) {
-        logger.error({ responseText }, 'Failed to parse Gemini response as JSON');
-        throw new Error('Invalid JSON: Gemini returned malformed JSON data.');
+      } catch (err) {
+        logger.error(
+          {
+            response: responseText,
+          },
+          "Gemini returned invalid JSON."
+        );
+
+        throw new Error(
+          "Invalid JSON: Gemini returned malformed JSON."
+        );
       }
 
-      // 5. Validate the parsed response using Zod
-      const validationResult = CRMLeadArraySchema.safeParse(parsedJson);
+      const validation = CRMLeadArraySchema.safeParse(parsedJson);
 
-      if (!validationResult.success) {
-        logger.error({ errors: validationResult.error.format() }, 'Zod validation failed for Gemini output');
-        throw new Error(`Schema Validation Error: Gemini output did not match the required CRM schema. Details: ${validationResult.error.message}`);
+      if (!validation.success) {
+        logger.error(
+          {
+            errors: validation.error.format(),
+          },
+          "Gemini response failed Zod validation."
+        );
+
+        throw new Error(
+          `Schema Validation Error: ${validation.error.message}`
+        );
       }
 
-      logger.info(`Successfully extracted ${validationResult.data.length} CRM leads from Gemini response.`);
-      return validationResult.data;
+      logger.info(
+        `Successfully extracted ${validation.data.length} CRM records.`
+      );
 
+      return validation.data;
     } catch (error: any) {
-      // 6. Throw descriptive errors based on API failure types
-      const errorMessage = error.message || 'Unknown error occurred';
+      const message = error?.message ?? "Unknown Gemini error.";
 
-      if (errorMessage.includes('429') || errorMessage.toLowerCase().includes('quota') || errorMessage.toLowerCase().includes('rate limit')) {
-        throw new Error('Rate Limit Exceeded: Gemini API is currently rate limited. Please try again later.');
+      logger.error(
+        {
+          error: message,
+        },
+        "Gemini extraction failed."
+      );
+
+      if (
+        message.includes("429") ||
+        message.toLowerCase().includes("quota") ||
+        message.toLowerCase().includes("rate limit")
+      ) {
+        throw new Error(
+          "Rate Limit Exceeded: Gemini API is currently rate limited. Please try again later."
+        );
       }
 
-      if (errorMessage.includes('Timeout')) {
-        throw error; // Already formatted by our Promise.race
+      if (
+        message.includes("503") ||
+        message.toLowerCase().includes("unavailable")
+      ) {
+        throw new Error(
+          "Gemini service is temporarily unavailable."
+        );
       }
 
-      if (errorMessage.includes('Invalid JSON') || errorMessage.includes('Schema Validation Error') || errorMessage.includes('Empty response')) {
-        throw error; // Rethrow our custom data integrity errors
+      if (
+        message.includes("404") &&
+        message.toLowerCase().includes("model")
+      ) {
+        throw new Error(
+          `Gemini model "${env.GEMINI_MODEL}" is unavailable.`
+        );
       }
 
-      // Catch-all for other generic API failures
-      throw new Error(`Gemini API Failure: ${errorMessage}`);
+      if (message.includes("Timeout")) {
+        throw error;
+      }
+
+      if (
+        message.includes("Schema Validation") ||
+        message.includes("Invalid JSON") ||
+        message.includes("Empty response")
+      ) {
+        throw error;
+      }
+
+      throw new Error(`Gemini API Failure: ${message}`);
     }
   }
 }

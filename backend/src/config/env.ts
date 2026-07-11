@@ -1,21 +1,28 @@
-import { z } from 'zod';
-import dotenv from 'dotenv';
+import { z } from "zod";
+import dotenv from "dotenv";
+import path from "path";
 
-// Load environment variables from .env file
-dotenv.config();
-
-const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().default('8000'),
-  GEMINI_API_KEY: z.string().optional(), // Make optional if you don't have it yet, or required if needed immediately
-  // Add other environment variables here
+dotenv.config({
+  path: path.resolve(__dirname, "../../.env"),
 });
 
-const _env = envSchema.safeParse(process.env);
+const envSchema = z.object({
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
 
-if (!_env.success) {
-  console.error('❌ Invalid environment variables:', _env.error.format());
-  throw new Error('Invalid environment variables');
+  PORT: z.string().default("8000"),
+
+  GEMINI_API_KEY: z.string(),
+
+  GEMINI_MODEL: z.string().default("gemini-flash-latest"),
+});
+
+const parsed = envSchema.safeParse(process.env);
+
+if (!parsed.success) {
+  console.error(parsed.error.format());
+  throw new Error("Invalid environment variables.");
 }
 
-export const env = _env.data;
+export const env = parsed.data;
