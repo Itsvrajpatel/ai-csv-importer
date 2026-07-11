@@ -72,7 +72,11 @@ export class GeminiService {
       let parsedJson: unknown;
 
       try {
-        parsedJson = JSON.parse(responseText);
+        let cleanText = responseText.trim();
+        // Remove markdown formatting if Gemini wrapped the response
+        cleanText = cleanText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        
+        parsedJson = JSON.parse(cleanText);
       } catch (err) {
         logger.error(
           {
