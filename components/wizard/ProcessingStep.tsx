@@ -17,6 +17,7 @@ export const ProcessingStep = React.memo(function ProcessingStep({ file, onBack,
   const [errorState, setErrorState] = useState<ErrorState | null>(null);
 
   const isMountedRef = useRef(true);
+  const hasStartedRef = useRef(false);
 
   const startImport = useCallback(async () => {
     setStatus("processing");
@@ -39,16 +40,20 @@ export const ProcessingStep = React.memo(function ProcessingStep({ file, onBack,
       const result = await importCSV(file);
       if (!isMountedRef.current) return;
       
-      clearInterval(stepInterval);
-      clearInterval(progressInterval);
-      
-      setCurrentStep(4);
-      setProgress(100);
-      setStatus("success");
-      
-      setTimeout(() => {
-        if (isMountedRef.current) onNext(result);
-      }, 600);
+      if (result.success === true) {
+        clearInterval(stepInterval);
+        clearInterval(progressInterval);
+        
+        setCurrentStep(4);
+        setProgress(100);
+        setStatus("success");
+        
+        setTimeout(() => {
+          if (isMountedRef.current) onNext(result);
+        }, 600);
+      } else {
+        throw new Error(result.message || "Import failed");
+      }
       
     } catch (err: any) {
       if (!isMountedRef.current) return;
@@ -63,7 +68,10 @@ export const ProcessingStep = React.memo(function ProcessingStep({ file, onBack,
 
   useEffect(() => {
     isMountedRef.current = true;
-    startImport();
+    if (!hasStartedRef.current) {
+      hasStartedRef.current = true;
+      startImport();
+    }
     
     return () => {
       isMountedRef.current = false;

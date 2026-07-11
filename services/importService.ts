@@ -21,6 +21,7 @@ export class ImportServiceError extends Error {
  * @throws {ImportServiceError} If network error, timeout, or server error occurs
  */
 export const importCSV = async (file: File): Promise<ImportResponse> => {
+  console.log("Import started");
   try {
     const formData = new FormData();
     formData.append('file', file);
@@ -29,15 +30,17 @@ export const importCSV = async (file: File): Promise<ImportResponse> => {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      timeout: 30000, // 30 seconds timeout
+      timeout: 120000, // 120 seconds timeout
     });
 
+    console.log("Import completed");
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<{ message?: string }>;
       
       if (axiosError.code === 'ECONNABORTED') {
+        console.log("Import aborted");
         throw new ImportServiceError('The request timed out. Please try again.', error);
       } else if (!axiosError.response) {
         throw new ImportServiceError('Network error. Please check your connection.', error);
