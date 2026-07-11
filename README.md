@@ -1,7 +1,7 @@
 # 🚀 AI CSV Importer
 
 <div align="center">
-  <p>An AI-powered CSV & Excel Importer that intelligently maps uploaded file columns to CRM fields using Google's Gemini AI. Users can upload CSV or Excel files, preview AI-generated mappings, validate data, and import structured CRM-ready records with minimal manual effort.</p>
+  <p>An AI-powered CSV Importer that intelligently maps uploaded file columns to CRM fields using Google's Gemini AI. Users can upload CSV files, preview AI-generated mappings, validate data, and import structured CRM-ready records with minimal manual effort.</p>
 </div>
 
 ## 🌐 Demo
@@ -17,7 +17,7 @@
 ## ✨ Features
 
 - **AI-Powered Mapping:** Intelligent column mapping using Google's Gemini AI.
-- **Multiple File Formats:** Seamless support for both CSV and Excel (`.xlsx`) file uploads.
+- **Multiple File Formats:** Seamlessly parse and validate CSV file uploads.
 - **Automatic Header Detection:** Automatically identifies and extracts headers from uploaded files.
 - **Data Preview:** Review AI-generated mappings and validate data before proceeding with the import.
 - **Confidence Scores:** View AI mapping confidence scores to ensure accuracy.
@@ -37,16 +37,49 @@
 ![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
 ![TanStack](https://img.shields.io/badge/TanStack_Table-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
+![PapaParse](https://img.shields.io/badge/PapaParse-5B3A29?style=for-the-badge)
 
 ### Backend
 ![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)
 ![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=google&logoColor=white)
 ![Zod](https://img.shields.io/badge/Zod-3E67B1?style=for-the-badge&logo=zod&logoColor=white)
+![PapaParse](https://img.shields.io/badge/PapaParse-5B3A29?style=for-the-badge)
+![Multer](https://img.shields.io/badge/Multer-FF7B00?style=for-the-badge)
 
 ### Deployment
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
 ![Render](https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)
+
+## 📖 API Documentation
+
+### Import CSV
+**Endpoint:** `POST /api/import`  
+**Content-Type:** `multipart/form-data`
+
+Uploads a CSV file, parses it, and maps it using Gemini AI.
+
+**Query Parameters:**
+- `batchSize` (optional): Number of rows to process per Gemini request (default: `10`).
+
+**Form Data:**
+- `file`: The CSV file to upload.
+
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "totalRows": 25,
+  "imported": 24,
+  "skipped": 1,
+  "failedBatches": 0,
+  "successfulBatches": 3,
+  "processingTime": 1250,
+  "records": [ ... ],
+  "warnings": [ "Row 5 skipped because missing required field" ],
+  "skippedRows": [ ... ]
+}
+```
 
 ## 🏗️ Architecture Flow
 
@@ -54,7 +87,7 @@ The application follows a clean, decoupled architecture:
 
 ```mermaid
 graph TD
-    A[User] -->|Uploads CSV/Excel| B(Next.js Frontend)
+    A[User] -->|Uploads CSV File| B(Next.js Frontend)
     B -->|Sends Data| C{Express Backend}
     C -->|Requests Mapping| D[Gemini AI]
     D -->|Returns Mapped Fields| C
@@ -76,24 +109,28 @@ graph TD
 
 ```text
 ai-csv-importer/
-├── frontend/             # Next.js application
-│   ├── src/
-│   │   ├── components/   # React components (Upload, Table, etc.)
-│   │   ├── pages/        # Next.js routes
-│   │   ├── styles/       # Tailwind & global CSS
-│   │   └── utils/        # Helper functions
-│   ├── package.json
-│   └── ...
+├── app/                  # Next.js App Router
+├── components/           # React components (Upload, Table, etc.)
+├── hooks/                # Custom React hooks
+├── lib/                  # Helper functions and validations
+├── services/             # Frontend API services
+├── types/                # TypeScript definitions
 ├── backend/              # Node.js / Express application
 │   ├── src/
+│   │   ├── config/       # Environment & configuration
 │   │   ├── controllers/  # Request handlers
+│   │   ├── middleware/   # Express middlewares (Upload, Error, Logger)
+│   │   ├── prompts/      # Gemini AI prompt builders
 │   │   ├── routes/       # API endpoints
 │   │   ├── services/     # Business logic & Gemini AI integration
-│   │   └── utils/        # Validation schemas & helpers
+│   │   ├── utils/        # Utilities (Logger)
+│   │   └── validators/   # Zod validation schemas
 │   ├── package.json
 │   └── ...
+├── package.json          # Frontend dependencies
 ├── README.md
 └── .gitignore
+
 ```
 
 ## 📋 Prerequisites
@@ -133,9 +170,9 @@ npm install
 Create a `.env` file in the `backend` directory and add your environment variables:
 
 ```env
-PORT=5000
+PORT=8000
 GEMINI_API_KEY=your_gemini_api_key_here
-FRONTEND_URL=http://localhost:3000
+GEMINI_MODEL=gemini-flash-latest
 ```
 
 Start the backend development server:
@@ -143,15 +180,11 @@ Start the backend development server:
 ```bash
 npm run dev
 ```
-*(The backend should now be running on `http://localhost:5000`)*
+*(The backend should now be running on `http://localhost:8000`)*
 
 ### 3. Frontend Setup
 
-Open another new terminal and navigate to the frontend directory:
-
-```bash
-cd frontend
-```
+Open another new terminal and navigate to the root directory:
 
 Install dependencies:
 
@@ -159,10 +192,10 @@ Install dependencies:
 npm install
 ```
 
-Create a `.env.local` file in the `frontend` directory:
+Create a `.env.local` file in the `root` directory:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
+BACKEND_URL=http://localhost:8000
 ```
 
 Start the frontend development server:
@@ -175,11 +208,18 @@ npm run dev
 ### 4. Usage
 
 1. Open `http://localhost:3000` in your browser.
-2. Drag and drop a CSV or Excel file.
+2. Drag and drop a CSV file.
 3. Review the AI-generated mappings.
 4. Finalize the import!
 
+## 🐛 Troubleshooting
+
+- **Upload Fails Immediately:** Ensure your file is strictly a `.csv` file and under the 5MB size limit.
+- **Frontend API 404/500 Errors:** Make sure your backend is running, and that `BACKEND_URL` in your frontend `.env.local` accurately points to the running backend port.
+- **Gemini Extraction Fails:** Ensure `GEMINI_API_KEY` is valid and hasn't exceeded its quota. Check backend console logs for specific API errors.
+
+
 ---
 <div align="center">
-  <i>Built with ❤️ for modern data workflows.</i>
+  <i>Built with ❤️ by Vraj Patel.</i>
 </div>
