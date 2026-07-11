@@ -129,10 +129,8 @@ export const ResultsStep = React.memo(function ResultsStep({ importResult, onRes
     warnings,
     searchInput,
     setSearchInput,
-    globalFilter,
-    setGlobalFilter,
-    statusFilter,
-    setStatusFilter,
+    filters,
+    setFilters,
     clearFilters,
     handleDownloadJson,
     handleDownloadFailed,
@@ -195,15 +193,15 @@ export const ResultsStep = React.memo(function ResultsStep({ importResult, onRes
 
       <motion.div variants={itemVariants} className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden mb-8 max-w-full">
         <ResultsToolbar 
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
+          filters={filters}
+          setFilters={setFilters}
           searchInput={searchInput}
           setSearchInput={setSearchInput}
-          globalFilter={globalFilter}
-          setGlobalFilter={setGlobalFilter}
+          records={records}
+          clearFilters={clearFilters}
         />
 
-        {table.getRowModel().rows.length > 0 || (globalFilter !== "" || statusFilter !== null) ? (
+        {table.getRowModel().rows.length > 0 || (searchInput !== "" || Object.values(filters).some(f => f.length > 0)) ? (
           <>
             <div className="overflow-x-auto max-h-[600px] relative scroll-smooth custom-scrollbar">
               <table className="w-full text-sm text-left text-zinc-600 min-w-[1200px] table-auto">
